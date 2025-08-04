@@ -26,15 +26,6 @@ class ModelTrainer:
         os.makedirs(MODEL_SAVE_PATH, exist_ok=True)
         os.makedirs("logs", exist_ok=True)
 
-        # Create log writers for each environment
-        self.log_writers = {}
-        for env_name in env_names:
-            log_path = os.path.join("logs", f"{env_name}_log.csv")
-            log_file = open(log_path, mode='w', newline='')
-            writer = csv.writer(log_file)
-            writer.writerow(['Step', 'Reward', 'Loss'])
-            self.log_writers[env_name] = {'file': log_file, 'writer': writer}
-
     def __del__(self):
         for env_log in self.log_writers.values():
             env_log['file'].close()
@@ -76,8 +67,6 @@ class ModelTrainer:
         losses = []
         self.model.train()
 
-        writer = self.log_writers[env_name]['writer']
-
         for episode in tqdm(range(1, EPISODES + 1), desc=f"Training {env_name}"):
             state, _ = env.reset()
             episode_reward = 0.0
@@ -103,8 +92,6 @@ class ModelTrainer:
 
                     loss_value = loss.item()
                     losses.append(loss_value)
-
-                writer.writerow([steps_done, reward, loss_value if loss_value is not None else ''])
 
                 if steps_done % TARGET_UPDATE_FREQ == 0:
                     self.target_model.load_state_dict(self.model.state_dict())
